@@ -1,16 +1,11 @@
-import './App.css'
+
 
 function Home() {
-
   return (
-    <>
-      <div>
-        <p>
-           Home Page
-        </p>
-      </div>
-    </>
-  )
+    <div>
+  
+    </div>
+  );
 }
 
-export default Home
+export default Home;
