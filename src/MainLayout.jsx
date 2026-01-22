@@ -19,7 +19,7 @@ const MainLayout = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ color: 'white', marginRight: '30px', fontWeight: 'bold', fontSize: '18px' }}>
+        <div style={{ color: 'white', marginRight: '1250px', fontWeight: 'bold', fontSize: '18px' }}>
           TATON COMPANY
         </div>
         <Menu
