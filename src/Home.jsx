@@ -3,9 +3,10 @@ import { getDoc, doc} from "firebase/firestore";
 import { useState, useEffect } from 'react'
 
 function Home() {
-const token = localStorage.getItem('userid');
-const [username, setUsername] = useState("กำลังโหลด...");
-const fetchData = async () => {
+  const token = localStorage.getItem('userid');
+  const [username, setUsername] = useState("กำลังโหลด...");
+
+  const fetchData = async () => {
   if (!token) {
       setUsername("ไม่พบข้อมูล Login");
       return;
@@ -25,13 +26,17 @@ const fetchData = async () => {
     }
    }
    
-useEffect(() => {
+  useEffect(() => {
     fetchData();
   }, []);
 
   function Logout() {
     localStorage.clear();
     window.location.href = "/";
+  }
+
+  function AddPost() {
+    
   }
 
   return (
