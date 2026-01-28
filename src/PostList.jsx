@@ -1,0 +1,124 @@
+import React, { useEffect, useState } from 'react';
+import { Table, Button, Space, Tag, Popconfirm, message, Card, Typography } from 'antd';
+import { DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
+import { db } from './firebase';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+
+const { Title } = Typography;
+
+const PostList = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ฟังก์ชันดึงข้อมูลจาก Firebase
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // เปลี่ยนชื่อ collection เป็นของคุณ (เช่น test_usercollection)
+      const querySnapshot = await getDocs(collection(db, "post_collection"));
+      const items = [];
+      querySnapshot.forEach((doc) => {
+        items.push({
+          key: doc.id, // Antd Table ต้องการ key ที่ไม่ซ้ำกัน
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      setData(items);
+    } catch (error) {
+      console.error("Error:", error);
+      message.error("ไม่สามารถดึงข้อมูลได้");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // ฟังก์ชันลบข้อมูล
+  const handleDelete = async (id) => {
+    try {
+      await deleteDoc(doc(db, "post_collection", id));
+      message.success("ลบข้อมูลสำเร็จ");
+      fetchData(); // ดึงข้อมูลใหม่หลังลบเสร็จ
+    } catch (error) {
+      message.error("ลบข้อมูลไม่สำเร็จ");
+    }
+  };
+
+  // กำหนดหัวตาราง (Columns)
+  const columns = [
+    {
+      title: 'Owner_name',
+      dataIndex: 'ownername',
+      key: 'ownername',
+      sorter: (a, b) => a.username.localeCompare(b.username), // เรียงลำดับ ก-ฮ
+    },
+    {
+      title: 'Post_Info',
+      dataIndex: 'postinfo',
+      key: 'postinfo',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => {
+        // สร้าง Tag สีตามสถานะ (ถ้าไม่มีข้อมูลให้ default เป็น success)
+        let color = status === 'Inactive' ? 'volcano' : 'green';
+        let text = status || 'Active';
+        return <Tag color={color}>{text.toUpperCase()}</Tag>;
+      },
+    },
+    {
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (time) => time?.toDate ? time.toDate().toLocaleString() : new Date().toLocaleString(),
+      width: 200,
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button type="primary" ghost icon={<EditOutlined />} onClick={() => message.info('กดแก้ไข ID: ' + record.id)}>
+            Edit
+          </Button>
+          
+          <Popconfirm
+            title="ยืนยันการลบ"
+            description="คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="ใช่, ลบเลย"
+            cancelText="ยกเลิก"
+          >
+            <Button danger icon={<DeleteOutlined />}>Delete</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <Title level={3} style={{ margin: 0 }}>รายชื่อผู้ใช้งาน</Title>
+        <Button icon={<ReloadOutlined />} onClick={fetchData}>รีเฟรชข้อมูล</Button>
+      </div>
+
+      <Table 
+        columns={columns} 
+        dataSource={data} 
+        loading={loading}
+        pagination={{ pageSize: 5 }} // แสดงหน้าละ 5 แถว
+        bordered
+        scroll={{ x: 'max-content' }} // เลื่อนแนวนอนได้ถ้าจอกว้างไม่พอ
+      />
+    </Card>
+  );
+};
+
+export default PostList;

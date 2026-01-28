@@ -6,6 +6,7 @@ import App from './App.jsx'
 import Home from './Home.jsx'
 import Register from './Register.jsx'
 import MainLayout from './MainLayout.jsx' // นำ Layout เข้ามา
+import PostList from './PostList.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/" element={<App />} />
           <Route path="/home" element={<Home />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/PostList" element={<PostList />} />
         </Route>
       </Routes>
     </BrowserRouter>

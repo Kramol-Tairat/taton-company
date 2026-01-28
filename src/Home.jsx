@@ -1,10 +1,13 @@
 import { db } from './firebase';
-import { getDoc, doc} from "firebase/firestore"; 
-import { useState, useEffect } from 'react'
+import { getDoc, doc , addDoc, collection, serverTimestamp} from "firebase/firestore"; 
+import { useState, useEffect, useRef } from 'react'
 
 function Home() {
   const token = localStorage.getItem('userid');
   const [username, setUsername] = useState("กำลังโหลด...");
+
+  const postInfoRef = useRef();
+  const postImgRef = useRef();
 
   const fetchData = async () => {
   if (!token) {
@@ -13,6 +16,8 @@ function Home() {
     }
 
     try {
+
+
       const docRef = doc(db, "test_usercollection", token);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -35,16 +40,41 @@ function Home() {
     window.location.href = "/";
   }
 
-  function AddPost() {
+  // function AddPost() {
+    const AddPost = async (e) => {
+      e.preventDefault()
+        try {
+          const infoValue = postInfoRef.current.value;     
+          // const PostInfo = document.getElementById("PostInfo");
+          // const PostImg = document.getElementById("PostImg");;
+          if (!infoValue) return alert("กรุณากรอกข้อความ");
+          await addDoc(collection(db, "post_collection"), {
+            postowner: token,
+            ownername: username,
+            postinfo: infoValue,
+            // postimg: PostImg.value,
+            timestamp: serverTimestamp(),
+          });
+          postInfoRef.current.value = "";
+          alert("เพิ่มโพสต์เรียบร้อย");
+          // window.location.href = "/";
+        } catch (err) {
+          console.error("Error adding document: ", err);
+        }
+      };
     
-  }
+  // }
 
   return (
     <div>
-        <h1>Login สำเร็จ
-          <p>User ID ของคุณคือ: {username}</p>
+        <h1>Login สำเร็จ</h1>
+        <p>User ID ของคุณคือ: {username}</p>
+          <form onSubmit={AddPost}>
+            <p>ใส่ข้อความ:<input type="text"  ref={postInfoRef} required id="PostInfo"/></p><br></br>
+            {/* <p>ใส่รูป:<input type="file" required id="PostImg"/></p><br></br> */}
+            <button type="submit">Add post</button><br></br><br></br>
+          </form>
           <button onClick={Logout}>Logout</button>
-        </h1>
     </div>
   );
 }
