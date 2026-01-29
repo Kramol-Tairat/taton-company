@@ -19,19 +19,44 @@ const MainLayout = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ color: 'white', marginRight: '1250px', fontWeight: 'bold', fontSize: '18px' }}>
-          TATON COMPANY
-        </div>
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          selectedKeys={[location.pathname]} // ไฮไลท์เมนูตาม URL ปัจจุบัน
-          items={menuItems}
-          onClick={(e) => navigate(e.key)}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-      </Header>
+<Header 
+  style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    padding: '0 20px',
+    background: '#001529', // กำหนดสีพื้นหลังให้ชัดเจน
+    position: 'sticky', 
+    top: 0, 
+    zIndex: 1000, 
+    width: '100%' 
+  }}
+>
+  {/* ส่วน Logo */}
+  <div style={{ 
+    color: 'white', 
+    fontWeight: 'bold', 
+    fontSize: '20px', 
+    marginRight: 'auto', // สำคัญ! คำสั่งนี้จะดัน Menu ไปขวาสุดโดยอัตโนมัติ
+    whiteSpace: 'nowrap'
+  }}>
+    TATON COMPANY
+  </div>
+
+  {/* ส่วน Menu */}
+  <Menu
+    theme="dark"
+    mode="horizontal"
+    selectedKeys={[location.pathname]}
+    items={menuItems}
+    onClick={(e) => navigate(e.key)}
+    style={{ 
+      minWidth: '300px', // กำหนดความกว้างขั้นต่ำ เพื่อไม่ให้เมนูหาย
+      justifyContent: 'flex-end', // จัดตัวหนังสือในเมนูให้ชิดขวา
+      borderBottom: 'none',
+      background: 'transparent' // ให้กลืนไปกับ Header
+    }}
+  />
+</Header>
       
       <Content style={{ padding: '24px 48px' }}>
         <div

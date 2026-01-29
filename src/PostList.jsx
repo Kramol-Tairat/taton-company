@@ -67,7 +67,6 @@ const PostList = () => {
       key: 'postimg',
       width: 120,
       render: (imgData) => (
-        // 3. ใช้ component Image ของ Antd เพื่อแสดงผล
         imgData ? (
           <Image
             width={80}
