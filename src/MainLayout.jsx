@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Menu, theme } from 'antd';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { HomeOutlined, UserAddOutlined, LoginOutlined } from '@ant-design/icons';
+import { HomeOutlined, UserAddOutlined, LoginOutlined, ExclamationCircleOutlined} from '@ant-design/icons';
 
 const { Header, Content, Footer } = Layout;
 
@@ -14,7 +14,7 @@ const MainLayout = () => {
     { label: 'Login', key: '/', icon: <LoginOutlined /> },
     { label: 'Home', key: '/home', icon: <HomeOutlined /> },
     { label: 'Register', key: '/register', icon: <UserAddOutlined /> },
-    { label: 'PostList', key: '/PostList', icon: <UserAddOutlined /> },
+    { label: 'PostList', key: '/PostList', icon: <ExclamationCircleOutlined /> },
   ];
 
   return (

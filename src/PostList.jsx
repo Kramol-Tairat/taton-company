@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Popconfirm, message, Card, Typography } from 'antd';
+import { Table, Button, Space, Tag, Popconfirm, message, Card, Typography, Image } from 'antd';
 import { DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
 import { db } from './firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -62,15 +62,21 @@ const PostList = () => {
       key: 'postinfo',
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => {
-        // สร้าง Tag สีตามสถานะ (ถ้าไม่มีข้อมูลให้ default เป็น success)
-        let color = status === 'Inactive' ? 'volcano' : 'green';
-        let text = status || 'Active';
-        return <Tag color={color}>{text.toUpperCase()}</Tag>;
-      },
+      title: 'Post_Img',
+      dataIndex: 'postimg',
+      key: 'postimg',
+      width: 120,
+      render: (imgData) => (
+        // 3. ใช้ component Image ของ Antd เพื่อแสดงผล
+        imgData ? (
+          <Image
+            width={80}
+            src={imgData}
+            alt="post-img"
+            style={{ borderRadius: '8px', objectFit: 'cover' }}
+          />
+        ) : <span style={{ color: '#ccc' }}>ไม่มีรูป</span>
+      )
     },
     {
       title: 'Timestamp',
