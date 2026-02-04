@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { arrayLength } from 'firebase/firestore/pipelines';
 import { db } from './firebase';
 import { collection ,getDocs} from "firebase/firestore"; 
@@ -10,6 +11,7 @@ const fetchData = async () => {
   // 1. อ้างอิงไปยัง Collection ที่ต้องการ
   const querySnapshot = await getDocs(collection(db, "test_usercollection"));
   // 2. วนลูปเพื่อดึงข้อมูลแต่ละรายการ
+  let CheckLoginSatus = false;
   querySnapshot.forEach((doc) => {
     // console.log(doc.id);
     // doc.id คือรหัสเอกสาร, doc.data() คือข้อมูลข้างใน
@@ -19,12 +21,20 @@ const fetchData = async () => {
     if (myData.username == username.value && myData.password == password.value) {
       alert("เข้าสู่ระบบสำเร็จ");
       localStorage.setItem('userid', doc.id);
-  
+      CheckLoginSatus = true;
       // window.location.replace('/Home');
       window.location.href = '/Home';
     };
   });
+  if (CheckLoginSatus == false) {
+    alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+  };
 };
+
+const token = localStorage.getItem('userid');
+  if (token) {
+    window.location.href = "/home";
+  }
 
   return (
     <div>

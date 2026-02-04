@@ -24,6 +24,14 @@ const PostList = () => {
           ...doc.data()
         });
       });
+
+      items.sort((a, b) => {
+        const timeA = a.timestamp?.seconds || 0; 
+        const timeB = b.timestamp?.seconds || 0;
+        return timeB - timeA;
+      });
+
+
       setData(items);
     } catch (error) {
       console.error("Error:", error);
@@ -54,7 +62,6 @@ const PostList = () => {
       title: 'Owner_name',
       dataIndex: 'ownername',
       key: 'ownername',
-      sorter: (a, b) => a.username.localeCompare(b.username), // เรียงลำดับ ก-ฮ
     },
     {
       title: 'Post_Info',

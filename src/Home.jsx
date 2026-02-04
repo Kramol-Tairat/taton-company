@@ -24,8 +24,9 @@ function Home() {
   };
 
   const fetchData = async () => {
-  if (!token) {
+    if (!token) {
       setUsername("ไม่พบข้อมูล Login");
+      window.location.href = "/";
       return;
     }
 
@@ -54,7 +55,6 @@ function Home() {
     window.location.href = "/";
   }
 
-  // function AddPost() {
     const AddPost = async (e) => {
       e.preventDefault()
         try {
@@ -89,16 +89,17 @@ function Home() {
           console.error("Error adding document: ", err);
         }
       };
-    
-  // }
+   
+
 
   return (
     <div>
-        <h1>Login สำเร็จ</h1>
+        <h1>Home เซฟงานด้วย</h1>
         <p>User ID ของคุณคือ: {username}</p>
           <form onSubmit={AddPost}>
             <p>ใส่ข้อความ:<input type="text"  ref={postInfoRef} required id="PostInfo"/></p><br></br>
             <p>ใส่รูป(ห้ามเกิน 500kbW):<input type="file" ref={postImgRef} accept="image/*" /></p><br></br>
+
             <button type="submit">Add post</button><br></br><br></br>
           </form>
           <button onClick={Logout}>Logout</button>

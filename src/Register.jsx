@@ -3,11 +3,16 @@ import { db } from './firebase';
 import { collection, addDoc, getDocs} from "firebase/firestore"; 
 
 function Register() {
+  const token = localStorage.getItem('userid');
+  if (token) {
+    window.location.href = "/home";
+  }
   const addData = async () => {
     try {
       const username = document.getElementById("username");
       const password = document.getElementById("password");
       const email = document.getElementById("username");
+      
       
       const querySnapshot = await getDocs(collection(db, "test_usercollection"));
       querySnapshot.forEach((doc)  => {
