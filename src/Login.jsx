@@ -3,7 +3,7 @@ import { arrayLength } from 'firebase/firestore/pipelines';
 import { db } from './firebase';
 import { collection ,getDocs} from "firebase/firestore"; 
 
-function App() {
+function Login() {
 const fetchData = async () => {
   let username = document.getElementById("username");
   let password = document.getElementById("password");
@@ -46,4 +46,4 @@ const token = localStorage.getItem('userid');
   );
 }
 
-export default App;
+export default Login;

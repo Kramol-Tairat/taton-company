@@ -2,11 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
-import App from './App.jsx'
+import Login from './Login.jsx'
 import Home from './Home.jsx'
 import Register from './Register.jsx'
 import MainLayout from './MainLayout.jsx' // นำ Layout เข้ามา
 import PostList from './PostList.jsx'
+import MainPage from './MainPage.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -14,9 +15,10 @@ createRoot(document.getElementById('root')).render(
       <Routes>
         {/* ใช้ MainLayout ครอบ Routes ทั้งหมด */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<App />} />
+          <Route path="/" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/MainPage" element={<MainPage />} />
           <Route path="/PostList" element={<PostList />} />
         </Route>
       </Routes>

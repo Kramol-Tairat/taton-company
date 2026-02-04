@@ -1,6 +1,7 @@
 
 import { db } from './firebase';
 import { collection, addDoc, getDocs} from "firebase/firestore"; 
+import { useState } from 'react';
 
 function Register() {
   const token = localStorage.getItem('userid');
@@ -13,25 +14,34 @@ function Register() {
       const password = document.getElementById("password");
       const email = document.getElementById("username");
       
-      
+      const Value1 = "ชื่อผู้ใช้ซ้ำ", Value2 = "อีเมลซ้ำ", Value3 = "nothing";
+      let status = Value3;
+
       const querySnapshot = await getDocs(collection(db, "test_usercollection"));
       querySnapshot.forEach((doc)  => {
         const myData = doc.data();
         if (myData.username == username.value) {
-         alert("ชื่อผู้ใช้ซ้ำ");
+          status = Value1;
         }else if (myData.email == email.value) {
-          alert("อีเมลซ้ำ")
+          status = Value2;
         };
       });
 
-      const docRef = await addDoc(collection(db, "test_usercollection"), {
-        username: username.value,
-        password: password.value,
-        useremail: email.value,
-        timestamp: new Date()
-      });
-      alert("เขียนข้อมูลสำเร็จ ID: " + docRef.id + " " + docRef.name);
-      window.location.href = "/";
+      if (status == Value3) {
+          const docRef = await addDoc(collection(db, "test_usercollection"), {
+            username: username.value,
+            password: password.value,
+            useremail: email.value,
+            status: "USER",
+            timestamp: new Date()
+          });
+          alert("เขียนข้อมูลสำเร็จ ID: " + docRef.id);
+          window.location.href = "/";
+      }else if (status == Value1) {
+        alert(Value1);
+      }else if (status == Value2) {
+        alert(Value2);
+      };
     } catch (e) {
       console.error("Error adding document: ", e);
     }

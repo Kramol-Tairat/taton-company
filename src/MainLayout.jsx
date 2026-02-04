@@ -14,7 +14,7 @@ const MainLayout = () => {
     { label: 'Login', key: '/', icon: <LoginOutlined /> },
     { label: 'Home', key: '/home', icon: <HomeOutlined /> },
     { label: 'Register', key: '/register', icon: <UserAddOutlined /> },
-    { label: 'PostList', key: '/PostList', icon: <ExclamationCircleOutlined /> },
+    { label: 'Main', key: '/MainPage', icon: <ExclamationCircleOutlined /> },
   ];
 
   return (
