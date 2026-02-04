@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from 'react'
 function Home() {
   const token = localStorage.getItem('userid');
   const [username, setUsername] = useState("กำลังโหลด...");
-  const [loading, setLoading] = useState(false);
 
   const postInfoRef = useRef();
   const postImgRef = useRef();
@@ -61,14 +60,13 @@ function Home() {
           const infoValue = postInfoRef.current.value;     
           const file = postImgRef.current.files[0];
 
-          setLoading(true);
+          
 
           let imageBase64 = null;
 
           if (file) {
             if (file.size > 500000) { 
                 alert("ไฟล์รูปใหญ่เกินไป! กรุณาใช้รูปขนาดเล็กกว่า 500KB สำหรับวิธีนี้");
-                setLoading(false);
                 return;
             }
             imageBase64 = await convertToBase64(file);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Avatar, Image, Typography, Space, Popconfirm, message, Skeleton, Empty } from 'antd';
 import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { db } from './firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, deleteDoc, doc } from 'firebase/firestore';
 
 const { Text, Title } = Typography;
 
@@ -10,25 +10,46 @@ const MainPage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. ส่วนดึงข้อมูล (Logic เดิม)
+  // 1. ส่วนดึงข้อมูล
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const querySnapshot = await getDocs(collection(db, "post_collection"));
-      const items = [];
-      querySnapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() });
-      });
-      // เรียงจาก ใหม่ -> เก่า
-      items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setData(items);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setLoading(true);
+        try {
+          const querySnapshot = await getDocs(collection(db, "post_collection"));
+          const items = [];
 
+          // ใช้ Promise.all เพื่อรอให้ดึงรูปโปรไฟล์ของทุกโพสต์เสร็จพร้อมกัน
+          const postsWithUserImg = await Promise.all(
+            querySnapshot.docs.map(async (postDoc) => {
+              const postData = postDoc.data();
+              let userImg = null;
+
+              // ดึงรูปโปรไฟล์จาก test_usercollection โดยใช้ postowner
+              if (postData.postowner) {
+                const userDocRef = doc(db, "test_usercollection", postData.postowner);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                  userImg = userDocSnap.data().userimg;
+                }
+              }
+
+              return {
+                id: postDoc.id,
+                ...postData,
+                userimg: userImg, // เพิ่ม field userimg เข้าไปใน object ของโพสต์
+              }; //return ค่ากลับไปยังตัวแปร postsWithUserImg
+            })
+          );
+
+          // เรียงลำดับตามเวลา
+          postsWithUserImg.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)); // นำเวสาตัวแรก(a)ของ array มาลบ กับตัวที่สอง (b) ลบไปเรื่อยๆ  ถ้าเป็นลบจะเรียงจากมากไปน้อย แบบ b -(ถึง) a , a-b ก็จะน้อยไปมาก
+          setData(postsWithUserImg);
+        } catch (error) {
+          console.error("Error fetching posts:", error);
+          message.error("โหลดข้อมูลไม่สำเร็จ");
+        } finally {
+          setLoading(false);
+        }
+      };
   useEffect(() => {
     fetchData();
   }, []);
@@ -88,7 +109,10 @@ const MainPage = () => {
           >
             {/* ส่วนหัว Card (รูปโปรไฟล์ + ชื่อ + เวลา) */}
             <Card.Meta
-              avatar={<Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />}
+              avatar={<Avatar src={item.userimg} // ใส่ลิงก์รูปตรงนี้
+                              icon={"<UserOutlined />"}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
+                              style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
+                      />}
               title={item.ownername || "ไม่ระบุชื่อ"}
               description={
                 <Space>
