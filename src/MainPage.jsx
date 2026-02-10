@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button, Avatar, Image, Typography, Space, Popconfirm, message, Skeleton, Empty } from 'antd';
 import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { db } from './firebase';
@@ -9,6 +10,7 @@ const { Text, Title } = Typography;
 const MainPage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // 1. ส่วนดึงข้อมูล
   const fetchData = async () => {
@@ -25,10 +27,10 @@ const MainPage = () => {
 
               // ดึงรูปโปรไฟล์จาก test_usercollection โดยใช้ postowner
               if (postData.postowner) {
-                const userDocRef = doc(db, "test_usercollection", postData.postowner);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                  userImg = userDocSnap.data().userimg;
+                const userDocRef = doc(db, "test_usercollection", postData.postowner); //ระบุตำแหน่ง doc
+                const userDocSnap = await getDoc(userDocRef); //ดึงข้อมูล
+                if (userDocSnap.exists()) {//เช็คว่ามีอยู่ไหม
+                  userImg = userDocSnap.data().userimg; //เอาข้อมูลยัดลง userImg ที่สร้างไว้
                 }
               }
 
@@ -64,6 +66,21 @@ const MainPage = () => {
     }
   };
 
+  const handleEdit = (postData) => {
+    // สั่งเปลี่ยนหน้า พร้อมแนบข้อมูลไปด้วย (property ชื่อ state)
+    navigate('/editPage', { 
+      state: { 
+        id: postData.id,
+        postowner: postData.postowner,
+        ownername: postData.ownername,
+        text: postData.postinfo,
+        time: postData.timestamp,
+        img: postData.postimg,
+        userimg: postData.userimg
+      } 
+    });
+  };
+
   // 2. ฟังก์ชันแปลงเวลาให้สวยงาม
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
@@ -80,10 +97,10 @@ const MainPage = () => {
         <Button onClick={fetchData}>รีเฟรช</Button>
       </div>
 
-      {loading ? (
+      {loading ? ( // เช็คว่าโหลดอยู่ไหม ถ้าโหลดให้ไปต่อ
         // แสดง Skeleton ตอนโหลด
         <Card bordered={false} style={{ marginBottom: 16 }}><Skeleton avatar active /></Card>
-      ) : data.length === 0 ? (
+      ) : data.length === 0 ? ( //เช็คว่ามีข้อมูลหรือไม่โดยเช็คข้อมูลภายในอาเรย์
         <Empty description="ยังไม่มีโพสต์" />
       ) : (
         // 3. วนลูปข้อมูลสร้าง Card
@@ -104,12 +121,20 @@ const MainPage = () => {
                 cancelText="ยกเลิก"
               >
                 <DeleteOutlined key="delete" style={{ color: 'red' }} />
+              </Popconfirm>,
+              <Popconfirm
+                title="แก้ไขโพสต์นี้??"
+                onConfirm={() => handleEdit(item)}
+                okText="แก้ไข"
+                cancelText="ยกเลิก"
+              >
+                <EditOutlined key="edit" style={{ color: 'yellow' }} />
               </Popconfirm>
             ]}
           >
             {/* ส่วนหัว Card (รูปโปรไฟล์ + ชื่อ + เวลา) */}
             <Card.Meta
-              avatar={<Avatar src={item.userimg} // ใส่ลิงก์รูปตรงนี้
+              avatar={<Avatar src={item.userimg } // ใส่ลิงก์รูปตรงนี้
                               icon={"<UserOutlined />"}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
                               style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
                       />}

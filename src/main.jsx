@@ -8,6 +8,7 @@ import Register from './Register.jsx'
 import MainLayout from './MainLayout.jsx' // นำ Layout เข้ามา
 import PostList from './PostList.jsx'
 import MainPage from './MainPage.jsx'
+import EditPage from './editPage.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/register" element={<Register />} />
           <Route path="/MainPage" element={<MainPage />} />
           <Route path="/PostList" element={<PostList />} />
+          <Route path="/EditPage" element={<EditPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
