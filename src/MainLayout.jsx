@@ -24,7 +24,7 @@ const MainLayout = () => {
     display: 'flex', 
     alignItems: 'center', 
     padding: '0 20px',
-    background: '#001529', // กำหนดสีพื้นหลังให้ชัดเจน
+    background: '#076fd0', // กำหนดสีพื้นหลังให้ชัดเจน
     position: 'sticky', 
     top: 0, 
     zIndex: 1000, 

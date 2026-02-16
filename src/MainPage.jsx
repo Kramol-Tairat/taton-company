@@ -130,14 +130,11 @@ const MainPage = () => {
               >
                 <EditOutlined key="edit" style={{ color: 'yellow' }} />
               </Popconfirm>,
-              <Popconfirm
-                title="แสดงความคิดเห็นแก่โพสต์นี้?"
-                onConfirm={() => handleComment(item)}
-                okText="ใช่"
-                cancelText="ยกเลิก"
+              <Button
+                onClick={() => handleComment(item)}
               >
                 <CommentOutlined key="edit" style={{ color: 'blue' }} />
-              </Popconfirm>
+              </Button>
             ]}
           >
             {/* ส่วนหัว Card (รูปโปรไฟล์ + ชื่อ + เวลา) */}
