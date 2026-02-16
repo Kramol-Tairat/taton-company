@@ -9,6 +9,7 @@ import MainLayout from './MainLayout.jsx' // นำ Layout เข้ามา
 import PostList from './PostList.jsx'
 import MainPage from './MainPage.jsx'
 import EditPage from './editPage.jsx'
+import CommentPage from './commentPage.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/MainPage" element={<MainPage />} />
           <Route path="/PostList" element={<PostList />} />
           <Route path="/EditPage" element={<EditPage />} />
+          <Route path="/CommentPage" element={<CommentPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

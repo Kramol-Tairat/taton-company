@@ -3,13 +3,20 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, Button, Avatar, Image, Typography, Space, Popconfirm, message, Input } from 'antd';
 import { DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import { db } from './firebase';
-import {  deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import {  addDoc, collection } from 'firebase/firestore';
 
 const { TextArea } = Input;
 
-const editPage = () => {
-  const location = useLocation(); // 1. เรียกใช้ Hook เพื่อดูข้อมูลใน URL/State
+const commentPage = () => {
+
+  const token = localStorage.getItem('userid');
+  const location = useLocation();
   const navigate = useNavigate();
+
+  if (!token) {
+      window.location.href = "/";
+      return;
+  };
 
   const receivedData = location.state;
   const [loading, setLoading] = useState(false);
@@ -18,35 +25,20 @@ const editPage = () => {
   if (!receivedData) {
     return <div>ไม่พบข้อมูล (คุณอาจพิมพ์ URL เข้ามาตรงๆ)</div>;
   }
-  const handleDelete = async (id) => {
+  const handleSubmit = async (id) => {
     try {
-      setLoading(true);
-      await deleteDoc(doc(db, "post_collection", id));
-      message.success("ลบโพสต์สำเร็จ");
-      fetchData();
+      await addDoc(collection(db, "comment_collection"), {
+        commentowner: token,
+        timestamp: serverTimestamp(),
+      });
     } catch (error) {
-      message.error("ลบไม่สำเร็จ");
+      message.error("คอมเมนท์ไม่สำเร็จมีบางอย่างผิดพลาด");
     } finally {
       setLoading(false);
     }
   };
-    const handleSubmit = async (id) => {
-      try {
-      setLoading(true);
-      const docRef = doc(db, "post_collection", id);
-      // สั่งอัปเดตเฉพาะ field "text"
-      await updateDoc(docRef, {
-        postinfo: newText,
-        // updated_at: new Date() // (Optional) ถ้าอยากเก็บเวลาแก้ไขล่าสุดด้วย ให้เปิดบรรทัดนี้
-      });
-
-      message.success("แก้ไขโพสต์สำเร็จ");
-      navigate(-1); // บันทึกเสร็จให้ย้อนกลับไปหน้าก่อนหน้า (หรือจะ redirect ไปหน้า Home)
-      } catch (error) {
-        message.error("ลบไม่สำเร็จ: " + error.message);
-      } finally {
-        setLoading(false);
-      }
+    const handleCancel = () => {
+      navigate(-1);
   };
 
   // 2. ฟังก์ชันแปลงเวลาให้สวยงาม
@@ -76,28 +68,21 @@ const editPage = () => {
                 <CheckOutlined key="submit" style={{ color: 'green' }} />
               </Popconfirm>,
                             <Popconfirm
-                title="ลบโพสต์นี้?"
-                onConfirm={() => handleDelete(receivedData.id)}
-                okText="ลบ"
-                cancelText="ยกเลิก"
+                title="ยกเลิก?"
+                onConfirm={() => handleCancel()}
+                okText="ใช่"
+                cancelText="ไม่ "
               >
                 <DeleteOutlined key="delete" style={{ color: 'red' }} />
               </Popconfirm>
             ]}
           >
-            {/* ส่วนหัว Card (รูปโปรไฟล์ + ชื่อ + เวลา) */}
             <Card.Meta
               avatar={<Avatar src={receivedData.userimg} // ใส่ลิงก์รูปตรงนี้
                               icon={"<UserOutlined />"}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
                               style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
                       />}
               title={receivedData.ownername || "ไม่ระบุชื่อ"}
-              // description={
-              //   <Space>
-              //     <ClockCircleOutlined style={{ fontSize: '12px' }} />
-              //     <span style={{ fontSize: '12px' }}>{formatTime(receivedData.time)}</span>
-              //   </Space>
-              // }
             />
 
             {/* ส่วนเนื้อหาข้อความ */}
@@ -110,25 +95,9 @@ const editPage = () => {
                 style={{ fontSize: '16px', borderRadius: '8px' }}
               />
             </div>
-
-            {/* ส่วนรูปภาพ (ถ้ามี) */}
-            {receivedData.img && (
-              <div style={{ marginTop: '16px' }}>
-                <Image
-                  src={receivedData.img}
-                  alt="Post Image"
-                  style={{ 
-                    borderRadius: '8px', 
-                    maxHeight: '400px', 
-                    objectFit: 'cover',
-                    width: '100%' 
-                  }}
-                />
-              </div>
-            )}
           </Card>
     </div>
   );
 };
 
-export default editPage;
+export default commentPage;

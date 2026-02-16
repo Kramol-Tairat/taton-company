@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Avatar, Image, Typography, Space, Popconfirm, message, Skeleton, Empty } from 'antd';
-import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined, CommentOutlined} from '@ant-design/icons';
 import { db } from './firebase';
 import { collection, getDocs, getDoc, deleteDoc, doc } from 'firebase/firestore';
 
@@ -80,6 +80,14 @@ const MainPage = () => {
       } 
     });
   };
+    const handleComment = (postData) => {
+    // สั่งเปลี่ยนหน้า พร้อมแนบข้อมูลไปด้วย (property ชื่อ state)
+    navigate('/CommentPage', { 
+      state: { 
+        id: postData.id
+      } 
+    });
+  };
 
   // 2. ฟังก์ชันแปลงเวลาให้สวยงาม
   const formatTime = (timestamp) => {
@@ -115,20 +123,20 @@ const MainPage = () => {
             }}
             actions={[ // ปุ่มด้านล่าง Card
               <Popconfirm
-                title="ลบโพสต์นี้?"
-                onConfirm={() => handleDelete(item.id)}
-                okText="ลบ"
-                cancelText="ยกเลิก"
-              >
-                <DeleteOutlined key="delete" style={{ color: 'red' }} />
-              </Popconfirm>,
-              <Popconfirm
                 title="แก้ไขโพสต์นี้??"
                 onConfirm={() => handleEdit(item)}
                 okText="แก้ไข"
                 cancelText="ยกเลิก"
               >
                 <EditOutlined key="edit" style={{ color: 'yellow' }} />
+              </Popconfirm>,
+              <Popconfirm
+                title="แสดงความคิดเห็นแก่โพสต์นี้?"
+                onConfirm={() => handleComment(item)}
+                okText="ใช่"
+                cancelText="ยกเลิก"
+              >
+                <CommentOutlined key="edit" style={{ color: 'blue' }} />
               </Popconfirm>
             ]}
           >
