@@ -117,14 +117,79 @@ const commentPage = () => {
   
 
   // 2. ฟังก์ชันแปลงเวลาให้สวยงาม
-  const formatTime = (timestamp) => {
+const formatTime = (timestamp) => {
     if (!timestamp) return '';
-    return timestamp.toDate().toLocaleString('th-TH', {
-      day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
-    });
+    
+    // กรณี 1: เป็น Firestore Timestamp ปกติ (มีฟังก์ชัน toDate)
+    if (typeof timestamp.toDate === 'function') {
+      return timestamp.toDate().toLocaleString('th-TH', {
+        day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+    }
+    
+    // กรณี 2: เป็น Object ที่ถูกส่งมาจาก Router (มีแค่ seconds)
+    if (timestamp.seconds) {
+      return new Date(timestamp.seconds * 1000).toLocaleString('th-TH', {
+        day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // กรณี 3: เป็น JS Date Object อยู่แล้ว
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleString('th-TH', {
+        day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    return '';
   };
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}> {/* จัดกึ่งกลางหน้าจอ */}
+          <Card
+                      key={receivedData.id}
+                      bordered={false} // <--- จุดสำคัญ: ปิดเส้นขอบ
+                      style={{ 
+                        marginBottom: 24, 
+                        borderRadius: '12px', // มุมโค้งมน
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)' // เงาบางๆ ให้ดูลอยขึ้นมา
+                      }}
+                    >
+                      {/* ส่วนหัว Card (รูปโปรไฟล์ + ชื่อ + เวลา) */}
+                      <Card.Meta
+                        avatar={<Avatar src={receivedData.userimg } // ใส่ลิงก์รูปตรงนี้
+                                        icon={"<UserOutlined />"}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
+                                        style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
+                                />}
+                        title={receivedData.ownername || "ไม่ระบุชื่อ"}
+                        description={
+                          <Space>
+                            <ClockCircleOutlined style={{ fontSize: '12px' }} />
+                            <span style={{ fontSize: '12px' }}>{formatTime(receivedData.timestamp)}</span>
+                          </Space>
+                        }
+                      />
+          
+                      {/* ส่วนเนื้อหาข้อความ */}
+                      <div style={{ marginTop: '16px', fontSize: '16px', lineHeight: '1.6' }}>
+                        {receivedData.postinfo}
+                      </div>
+          
+                      {/* ส่วนรูปภาพ (ถ้ามี) */}
+                      {receivedData.postimg && (
+                        <div style={{ marginTop: '16px' }}>
+                          <Image
+                            src={receivedData.postimg}
+                            alt="Post Image"
+                            style={{ 
+                              borderRadius: '8px', 
+                              maxHeight: '400px', 
+                              objectFit: 'cover',
+                              width: '100%' 
+                            }}
+                          />
+                        </div>
+                      )}
+          </Card>
           <Card
             key={token}
             bordered={false} // <--- จุดสำคัญ: ปิดเส้นขอบ
@@ -176,7 +241,7 @@ const commentPage = () => {
         // แสดง Skeleton ตอนโหลด
             <Card bordered={false} style={{ marginBottom: 16 }}><Skeleton avatar active /></Card>
           ) : commentList.length === 0 ? ( //เช็คว่ามีข้อมูลหรือไม่โดยเช็คข้อมูลภายในอาเรย์
-            <Empty description="ยังไม่มีโพสต์" />
+            <Empty description="ยังไม่มีคอมเม้นท์" />
           ) : ( commentList.map((item) => (
           <Card
             key={item.id}

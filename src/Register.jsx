@@ -81,7 +81,7 @@ function Register() {
       <input type="password" id="password" placeholder='รหัส'/><br></br>
       <input type="email" id="emai" placeholder='อีเมล'/>
       <p>ใส่รูปโปรไฟล์(ห้ามเกิน 500kbW):<input type="file" ref={postImgRef} accept="image/*" /></p><br></br>
-      <button onClick={addData}>ลองเพิ่มข้อมูล</button>
+      <button onClick={addData}>ลงชื่อเข้าใช้</button>
     </div>
   );
 }
