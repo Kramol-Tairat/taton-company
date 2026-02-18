@@ -1,24 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Avatar, Image, Typography, Space, Popconfirm, message, Skeleton, Empty } from 'antd';
-import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined, CommentOutlined, HeartOutlined, HeartFilled} from '@ant-design/icons';
+import { EditOutlined, ClockCircleOutlined, CommentOutlined, HeartOutlined, HeartFilled, UserOutlined } from '@ant-design/icons';
 import { db } from './firebase';
 import { collection, getDocs, getDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove} from 'firebase/firestore';
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 const MainPage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const currentUserId = localStorage.getItem('userid'); // ดึง ID ผู้ใช้มารอไว้เลย
 
   // 1. ส่วนดึงข้อมูล
   const fetchData = async () => {
         setLoading(true);
         try {
           const querySnapshot = await getDocs(collection(db, "post_collection"));
-          const items = [];
-
+          
           // ใช้ Promise.all เพื่อรอให้ดึงรูปโปรไฟล์ของทุกโพสต์เสร็จพร้อมกัน
           const postsWithUserImg = await Promise.all(
             querySnapshot.docs.map(async (postDoc) => {
@@ -27,23 +27,25 @@ const MainPage = () => {
 
               // ดึงรูปโปรไฟล์จาก test_usercollection โดยใช้ postowner
               if (postData.postowner) {
-                const userDocRef = doc(db, "test_usercollection", postData.postowner); //ระบุตำแหน่ง doc
-                const userDocSnap = await getDoc(userDocRef); //ดึงข้อมูล
-                if (userDocSnap.exists()) {//เช็คว่ามีอยู่ไหม
-                  userImg = userDocSnap.data().userimg; //เอาข้อมูลยัดลง userImg ที่สร้างไว้
+                const userDocRef = doc(db, "test_usercollection", postData.postowner); 
+                const userDocSnap = await getDoc(userDocRef); 
+                if (userDocSnap.exists()) {
+                  userImg = userDocSnap.data().userimg; 
                 }
               }
 
               return {
                 id: postDoc.id,
                 ...postData,
-                userimg: userImg, // เพิ่ม field userimg เข้าไปใน object ของโพสต์
-              }; //return ค่ากลับไปยังตัวแปร postsWithUserImg
+                userimg: userImg,
+                // --- แก้ไขจุดที่ 1: ป้องกัน Error ถ้าไม่มี likes ให้ใส่ [] แทน ---
+                likes: Array.isArray(postData.likes) ? postData.likes : [] 
+              }; 
             })
           );
 
           // เรียงลำดับตามเวลา
-          postsWithUserImg.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)); // นำเวสาตัวแรก(a)ของ array มาลบ กับตัวที่สอง (b) ลบไปเรื่อยๆ  ถ้าเป็นลบจะเรียงจากมากไปน้อย แบบ b -(ถึง) a , a-b ก็จะน้อยไปมาก
+          postsWithUserImg.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)); 
           setData(postsWithUserImg);
         } catch (error) {
           console.error("Error fetching posts:", error);
@@ -52,22 +54,12 @@ const MainPage = () => {
           setLoading(false);
         }
       };
+
   useEffect(() => {
     fetchData();
   }, []);
 
-  const handleDelete = async (id) => {
-    try {
-      await deleteDoc(doc(db, "post_collection", id));
-      message.success("ลบโพสต์สำเร็จ");
-      fetchData();
-    } catch (error) {
-      message.error("ลบไม่สำเร็จ");
-    }
-  };
-
   const handleEdit = (postData) => {
-    // สั่งเปลี่ยนหน้า พร้อมแนบข้อมูลไปด้วย (property ชื่อ state)
     navigate('/editPage', { 
       state: { 
         id: postData.id,
@@ -80,8 +72,8 @@ const MainPage = () => {
       } 
     });
   };
-    const handleComment = (postData) => {
-    // สั่งเปลี่ยนหน้า พร้อมแนบข้อมูลไปด้วย (property ชื่อ state)
+
+  const handleComment = (postData) => {
     navigate('/CommentPage', { 
       state: { 
         id: postData.id,
@@ -95,101 +87,111 @@ const MainPage = () => {
   };
 
   const handleLike = async (post) => {
-    const currentUserId = localStorage.getItem('userid');
     if (!currentUserId) {
       message.warning("กรุณาล็อกอินก่อนกดไลค์");
       return;
     }
 
+    // --- แก้ไขจุดที่ 2: ใช้ Optional Chaining ?. ป้องกัน Error ---
+    const isLiked = post.likes?.includes(currentUserId);
     const postRef = doc(db, "post_collection", post.id);
-    // เช็คว่าเคยไลค์ไปหรือยัง (ดูว่าใน array likes มี id เราไหม)
-    const isLiked = post.likes && post.likes.includes(currentUserId);
+
+    // อัปเดต UI ทันที (Optimistic Update) เพื่อความลื่นไหล
+    const newData = data.map(item => {
+        if (item.id === post.id) {
+            let newLikes = [...item.likes];
+            if (isLiked) {
+                newLikes = newLikes.filter(id => id !== currentUserId);
+            } else {
+                newLikes.push(currentUserId);
+            }
+            return { ...item, likes: newLikes };
+        }
+        return item;
+    });
+    setData(newData);
 
     try {
       if (isLiked) {
-        // ถ้าเคยไลค์แล้ว -> ให้เอาออก (Unlike)
         await updateDoc(postRef, {
           likes: arrayRemove(currentUserId)
         });
       } else {
-        // ถ้ายังไม่เคย -> ให้เพิ่มเข้าไป (Like)
         await updateDoc(postRef, {
           likes: arrayUnion(currentUserId)
         });
       }
-      fetchData(); // โหลดข้อมูลใหม่เพื่ออัพเดทสีหัวใจและตัวเลข
+      // ไม่ต้อง fetchData() ซ้ำแล้วเพราะเราอัปเดต UI ไปแล้วข้างบน
     } catch (error) {
       console.error("Like Error:", error);
-      message.error("เกิดข้อผิดพลาด");
+      message.error("เกิดข้อผิดพลาดในการกดไลค์");
+      fetchData(); // ถ้า Error ให้โหลดข้อมูลจริงกลับมาคืน
     }
   };
 
-  // 2. ฟังก์ชันแปลงเวลาให้สวยงาม
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
-    return timestamp.toDate().toLocaleString('th-TH', {
-      day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
-    });
+    if (typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toLocaleString('th-TH', {
+          day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
+    }
+    return '';
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}> {/* จัดกึ่งกลางหน้าจอ */}
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}> 
       
-      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between' }}>
-        <Title level={3}>ฟีดข่าวสาร</Title>
+      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Title level={3} style={{ margin: 0 }}>ฟีดข่าวสาร</Title>
         <Button onClick={fetchData}>รีเฟรช</Button>
       </div>
 
-      {loading ? ( // เช็คว่าโหลดอยู่ไหม ถ้าโหลดให้ไปต่อ
-        // แสดง Skeleton ตอนโหลด
+      {loading ? (
         <Card bordered={false} style={{ marginBottom: 16 }}><Skeleton avatar active /></Card>
-      ) : data.length === 0 ? ( //เช็คว่ามีข้อมูลหรือไม่โดยเช็คข้อมูลภายในอาเรย์
+      ) : data.length === 0 ? ( 
         <Empty description="ยังไม่มีโพสต์" />
       ) : (
-        // 3. วนลูปข้อมูลสร้าง Card
         data.map((item) => (
           <Card
             key={item.id}
-            bordered={false} // <--- จุดสำคัญ: ปิดเส้นขอบ
+            bordered={false} 
             style={{ 
               marginBottom: 24, 
-              borderRadius: '12px', // มุมโค้งมน
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)' // เงาบางๆ ให้ดูลอยขึ้นมา
+              borderRadius: '12px', 
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
             }}
-            actions={[ // ปุ่มด้านล่าง Card
-              <Button
-                onClick={() => handleLike(item)}
-              >
-                {/* เช็คว่าเรากดไลค์ไปหรือยัง เพื่อเลือกโชว์ไอคอน */}
-                {item.likes && item.likes.includes(localStorage.getItem('userid')) ? (
-                    <HeartFilled style={{ color: 'red' }} /> // ไลค์แล้ว: หัวใจทึบสีแดง
+            actions={[ 
+              <Button type="text" onClick={() => handleLike(item)} key="like">
+                {/* --- แก้ไขจุดที่ 3: เช็ค Array.isArray หรือใช้ ?. เพื่อความชัวร์ --- */}
+                {Array.isArray(item.likes) && item.likes.includes(currentUserId) ? (
+                    <HeartFilled style={{ color: 'red' }} /> 
                 ) : (
-                    <HeartOutlined /> // ยังไม่ไลค์: หัวใจโปร่ง
+                    <HeartOutlined /> 
                 )}
-                {/* โชว์จำนวนไลค์ */}
-                <span>{item.likes ? item.likes.length : 0}</span>
+                <span style={{ marginLeft: 8 }}>
+                    {Array.isArray(item.likes) ? item.likes.length : 0}
+                </span>
               </Button>,
               <Popconfirm
-                title="แก้ไขโพสต์นี้??"
+                title="แก้ไขโพสต์นี้?"
                 onConfirm={() => handleEdit(item)}
                 okText="แก้ไข"
                 cancelText="ยกเลิก"
+                disabled={item.postowner !== currentUserId} // ปิดการกดถ้าไม่ใช่เจ้าของโพสต์
               >
-                <EditOutlined key="edit" style={{ color: 'yellow' }} />
+                {/* แสดงปุ่มแก้ไขเฉพาะเจ้าของโพสต์ (Optional) */}
+                <Button type="text" disabled={item.postowner !== currentUserId}>
+                    <EditOutlined key="edit" style={{ color: item.postowner === currentUserId ? '#faad14' : 'gray' }} />
+                </Button>
               </Popconfirm>,
-              <Button
-                onClick={() => handleComment(item)}
-              >
-                <CommentOutlined key="edit" style={{ color: 'blue' }} />
+              <Button type="text" onClick={() => handleComment(item)} key="comment">
+                <CommentOutlined style={{ color: '#1890ff' }} />
               </Button>
             ]}
           >
-            {/* ส่วนหัว Card (รูปโปรไฟล์ + ชื่อ + เวลา) */}
             <Card.Meta
-              avatar={<Avatar src={item.userimg } // ใส่ลิงก์รูปตรงนี้
-                              icon={"<UserOutlined />"}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
-                              style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
-                      />}
+              avatar={<Avatar src={item.userimg} icon={<UserOutlined />} style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} />}
               title={item.ownername || "ไม่ระบุชื่อ"}
               description={
                 <Space>
@@ -199,23 +201,16 @@ const MainPage = () => {
               }
             />
 
-            {/* ส่วนเนื้อหาข้อความ */}
             <div style={{ marginTop: '16px', fontSize: '16px', lineHeight: '1.6' }}>
               {item.postinfo}
             </div>
 
-            {/* ส่วนรูปภาพ (ถ้ามี) */}
             {item.postimg && (
               <div style={{ marginTop: '16px' }}>
                 <Image
                   src={item.postimg}
                   alt="Post Image"
-                  style={{ 
-                    borderRadius: '8px', 
-                    maxHeight: '400px', 
-                    objectFit: 'cover',
-                    width: '100%' 
-                  }}
+                  style={{ borderRadius: '8px', maxHeight: '400px', objectFit: 'cover', width: '100%' }}
                 />
               </div>
             )}

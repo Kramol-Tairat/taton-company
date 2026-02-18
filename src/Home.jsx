@@ -1,11 +1,16 @@
 import { db } from './firebase';
 import { getDoc, doc , addDoc, collection, serverTimestamp} from "firebase/firestore"; 
 import { Card, Empty, Button, Avatar, Image, Typography, Space, Popconfirm, message, Input, Skeleton } from 'antd';
+import { EditOutlined, ClockCircleOutlined, CommentOutlined, HeartOutlined, HeartFilled, UserOutlined } from '@ant-design/icons';
 import { useState, useEffect, useRef } from 'react'
+
+const { TextArea } = Input;
 
 function Home() {
   const token = localStorage.getItem('userid');
   const [username, setUsername] = useState("กำลังโหลด...");
+  const [userData, setUserData] = useState();
+  const [newText, setNewText] = useState(''); 
 
   const postInfoRef = useRef();
   const postImgRef = useRef();
@@ -36,9 +41,15 @@ function Home() {
       const docRef = doc(db, "test_usercollection", token);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setUsername(docSnap.data().username); // อัปเดต State เมื่อเจอข้อมูล
+        setUsername(docSnap.data().username);
+        setUserData({
+          ...docSnap.data(),
+        }); // อัปเดต State เมื่อเจอข้อมูล
       } else {
         setUsername("ไม่พบชื่อผู้ใช้");
+        setUserData([
+
+        ]);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -58,7 +69,7 @@ function Home() {
     const AddPost = async (e) => {
       e.preventDefault()
         try {
-          const infoValue = postInfoRef.current.value;     
+          const infoValue = newText;     
           const file = postImgRef.current.files[0];
 
           
@@ -79,10 +90,10 @@ function Home() {
             ownername: username,
             postinfo: infoValue,
             postimg: imageBase64,
-            likes: {},
+            likes: [],
             timestamp: serverTimestamp(),
           });
-          postInfoRef.current.value = "";
+          setNewText("");
           alert("เพิ่มโพสต์เรียบร้อย");
           // window.location.href = "/";
         } catch (err) {
@@ -95,14 +106,40 @@ function Home() {
   return (
     <div>
         <h1>Home</h1>
-        <p>User ID ของคุณคือ: {username}</p>
-          <form onSubmit={AddPost}>
-            <p>ใส่ข้อความ:<input type="text"  ref={postInfoRef} required id="PostInfo"/></p><br></br>
-            <p>ใส่รูป(ห้ามเกิน 500kbW):<input type="file" ref={postImgRef} accept="image/*" /></p><br></br>
+        <Card.Meta
+              avatar={<Avatar src={userData?.userimg} // ใส่ลิงก์รูปตรงนี้
+                              icon={<UserOutlined />}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
+                              style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
+                      />}
+              title={username || "ไม่ระบุชื่อ"}
+              description = {
+                <span>ผู้ใช้</span>
+              }
+            />
+      <form onSubmit={AddPost}>
+        <p>ใส่ข้อความ:</p>
+        <div style={{ marginTop: '8px' }}>
+          <TextArea
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            autoSize={{ minRows: 3, maxRows: 10 }}
+            placeholder="โพสต์ข้อความของคุณ..."
+            style={{ fontSize: '16px', borderRadius: '8px' }}
+          />
+        </div>
+        <br />
+        
+        <p>ใส่รูป (ห้ามเกิน 500kb): 
+          <input type="file" ref={postImgRef} accept="image/*" style={{ marginLeft: 10 }}/>
+        </p>
+        <br />
 
-            <button type="submit">Add post</button><br></br><br></br>
-          </form>
-          <button onClick={Logout}>Logout</button>
+        <Button type="primary" htmlType="submit">Add post</Button>
+        <Button danger htmlType="reset">ล้าง</Button><br></br><br></br>
+        <br /><br />
+      </form>
+
+          <Button danger onClick={Logout}>Logout</Button>
     </div>
   );
 }
