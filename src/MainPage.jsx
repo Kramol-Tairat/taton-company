@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Avatar, Image, Typography, Space, Popconfirm, message, Skeleton, Empty } from 'antd';
-import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined, CommentOutlined} from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, UserOutlined, ClockCircleOutlined, CommentOutlined, HeartOutlined, HeartFilled} from '@ant-design/icons';
 import { db } from './firebase';
-import { collection, getDocs, getDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove} from 'firebase/firestore';
 
 const { Text, Title } = Typography;
 
@@ -84,9 +84,44 @@ const MainPage = () => {
     // สั่งเปลี่ยนหน้า พร้อมแนบข้อมูลไปด้วย (property ชื่อ state)
     navigate('/CommentPage', { 
       state: { 
-        id: postData.id
+        id: postData.id,
+        userimg: postData.userimg,
+        postimg: postData.postimg,
+        postinfo: postData.postinfo,
+        timestamp: postData.timestamp,
+        ownername: postData.ownername,
       } 
     });
+  };
+
+  const handleLike = async (post) => {
+    const currentUserId = localStorage.getItem('userid');
+    if (!currentUserId) {
+      message.warning("กรุณาล็อกอินก่อนกดไลค์");
+      return;
+    }
+
+    const postRef = doc(db, "post_collection", post.id);
+    // เช็คว่าเคยไลค์ไปหรือยัง (ดูว่าใน array likes มี id เราไหม)
+    const isLiked = post.likes && post.likes.includes(currentUserId);
+
+    try {
+      if (isLiked) {
+        // ถ้าเคยไลค์แล้ว -> ให้เอาออก (Unlike)
+        await updateDoc(postRef, {
+          likes: arrayRemove(currentUserId)
+        });
+      } else {
+        // ถ้ายังไม่เคย -> ให้เพิ่มเข้าไป (Like)
+        await updateDoc(postRef, {
+          likes: arrayUnion(currentUserId)
+        });
+      }
+      fetchData(); // โหลดข้อมูลใหม่เพื่ออัพเดทสีหัวใจและตัวเลข
+    } catch (error) {
+      console.error("Like Error:", error);
+      message.error("เกิดข้อผิดพลาด");
+    }
   };
 
   // 2. ฟังก์ชันแปลงเวลาให้สวยงาม
@@ -122,6 +157,18 @@ const MainPage = () => {
               boxShadow: '0 2px 8px rgba(0,0,0,0.05)' // เงาบางๆ ให้ดูลอยขึ้นมา
             }}
             actions={[ // ปุ่มด้านล่าง Card
+              <Button
+                onClick={() => handleLike(item)}
+              >
+                {/* เช็คว่าเรากดไลค์ไปหรือยัง เพื่อเลือกโชว์ไอคอน */}
+                {item.likes && item.likes.includes(localStorage.getItem('userid')) ? (
+                    <HeartFilled style={{ color: 'red' }} /> // ไลค์แล้ว: หัวใจทึบสีแดง
+                ) : (
+                    <HeartOutlined /> // ยังไม่ไลค์: หัวใจโปร่ง
+                )}
+                {/* โชว์จำนวนไลค์ */}
+                <span>{item.likes ? item.likes.length : 0}</span>
+              </Button>,
               <Popconfirm
                 title="แก้ไขโพสต์นี้??"
                 onConfirm={() => handleEdit(item)}

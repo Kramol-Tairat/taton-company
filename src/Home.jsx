@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { getDoc, doc , addDoc, collection, serverTimestamp} from "firebase/firestore"; 
+import { Card, Empty, Button, Avatar, Image, Typography, Space, Popconfirm, message, Input, Skeleton } from 'antd';
 import { useState, useEffect, useRef } from 'react'
 
 function Home() {
@@ -78,6 +79,7 @@ function Home() {
             ownername: username,
             postinfo: infoValue,
             postimg: imageBase64,
+            likes: {},
             timestamp: serverTimestamp(),
           });
           postInfoRef.current.value = "";
