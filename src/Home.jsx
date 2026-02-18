@@ -92,7 +92,7 @@ function Home() {
 
   return (
     <div>
-        <h1>Home เซฟงานด้วย</h1>
+        <h1>Home</h1>
         <p>User ID ของคุณคือ: {username}</p>
           <form onSubmit={AddPost}>
             <p>ใส่ข้อความ:<input type="text"  ref={postInfoRef} required id="PostInfo"/></p><br></br>
