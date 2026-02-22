@@ -24,10 +24,8 @@ const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
-    { label: 'Login', key: '/', icon: <LoginOutlined /> },
+    { label: 'LandingPage', key: '/', icon: <LoginOutlined /> },
     { label: 'Home', key: '/home', icon: <HomeOutlined /> },
-    { label: 'Register', key: '/register', icon: <UserAddOutlined /> },
-    { label: 'Main', key: '/MainPage', icon: <ExclamationCircleOutlined /> },
   ];
 
   // ฟังก์ชันคลิกเมนู (ใช้ร่วมกันทั้ง Mobile และ Desktop)

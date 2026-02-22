@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { arrayLength } from 'firebase/firestore/pipelines';
+import { Input } from 'antd';
 import { db } from './firebase';
 import { collection ,getDocs} from "firebase/firestore"; 
 
@@ -21,6 +22,7 @@ const fetchData = async () => {
     if (myData.username == username.value && myData.password == password.value) {
       alert("เข้าสู่ระบบสำเร็จ");
       localStorage.setItem('userid', doc.id);
+      localStorage.setItem('username', myData.username);
       CheckLoginSatus = true;
       // window.location.replace('/Home');
       window.location.href = '/Home';
@@ -30,6 +32,13 @@ const fetchData = async () => {
     alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
   };
 };
+const containerStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center', // เต็มความสูงจอ  // เต็มความกว้างจอ
+    backgroundColor: '#ffffff' // สีพื้นหลังอ่อนๆ
+  };
 
 const token = localStorage.getItem('userid');
   if (token) {
@@ -37,11 +46,22 @@ const token = localStorage.getItem('userid');
   }
 
   return (
-    <div>
-      <h1>Welcome to tuntee.com</h1>
-      <input type="name" id="username" placeholder='ชื่อ'/><br></br>
-      <input type="password" id="password" placeholder='รหัส'/>
+    <div style={containerStyle}>
+      <h1 >Login</h1>
+      <Input 
+        type="name" 
+        id="username" 
+        placeholder='ชื่อ'
+        style={{ width: '40%'  }}
+      /><br></br>
+      <Input 
+        type="password" 
+        id="password" 
+        placeholder='รหัส'
+        style={{ width: '40%'  }}
+      /><br></br>
       <button onClick={fetchData}>Login</button>
+    
     </div>
   );
 }
