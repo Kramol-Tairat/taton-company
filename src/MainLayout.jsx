@@ -26,6 +26,7 @@ const MainLayout = () => {
   const menuItems = [
     { label: 'LandingPage', key: '/', icon: <LoginOutlined /> },
     { label: 'Home', key: '/home', icon: <HomeOutlined /> },
+    { label: 'Main', key: '/MainPage', icon: <ExclamationCircleOutlined /> },
   ];
 
   // ฟังก์ชันคลิกเมนู (ใช้ร่วมกันทั้ง Mobile และ Desktop)
