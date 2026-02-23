@@ -1,94 +1,111 @@
-
 import { db } from './firebase';
-import { collection, addDoc, getDocs} from "firebase/firestore"; 
-import { Input } from 'antd';
-import { useRef } from 'react';
+import { collection, addDoc, getDocs, query, where, limit } from "firebase/firestore"; 
+import { Input, Button, message } from 'antd';
+import { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Register() {
-  const token = localStorage.getItem('userid');
-  const Value1 = "ชื่อผู้ใช้ซ้ำ", Value2 = "อีเมลซ้ำ", Value3 = "nothing";
-  let imageBase64 = "";
-  
-  if (token) {
-    window.location.href = "/home";
-  }      
+  const navigate = useNavigate();
+  // Use State instead of document.getElementById
+  const [formData, setFormData] = useState({ username: '', password: '', email: '' });
   const postImgRef = useRef();
+
+  // Redirect if logged in
+  useEffect(() => {
+    const token = localStorage.getItem('userid');
+    if (token) navigate("/home");
+  }, [navigate]);
+
   const convertToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const fileReader = new FileReader();
-            fileReader.readAsDataURL(file);
-            fileReader.onload = () => {
-              resolve(fileReader.result);
-            };
-            fileReader.onerror = (error) => {
-              reject(error);
-            };
-          });
-        };
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const addData = async () => {
+    const { username, password, email } = formData;
+    
+    if (!username || !password || !email) {
+      return message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
+    }
+
     try {
-      const username = document.getElementById("username");
-      const password = document.getElementById("password");
-      const email = document.getElementById("username");
-      let status = Value3;
+      let imageBase64 = "";
+      const file = postImgRef.current.input.files[0]; // AntD Input ref structure
 
-      const file = postImgRef.current.files[0];
-        if (file) {
-            if (file.size > 500000) { 
-                alert("ไฟล์รูปใหญ่เกินไป! กรุณาใช้รูปขนาดเล็กกว่า 500KB สำหรับวิธีนี้");
-                return;
-            }
-            imageBase64 = await convertToBase64(file);
-            // alert(imageBase64);
-          }
+      if (file) {
+        if (file.size > 500000) { 
+          return message.warning("ไฟล์รูปใหญ่เกินไป! กรุณาใช้รูปขนาดเล็กกว่า 500KB");
+        }
+        imageBase64 = await convertToBase64(file);
+      }
 
-      const querySnapshot = await getDocs(collection(db, "test_usercollection"));
-      querySnapshot.forEach((doc)  => {
-        const myData = doc.data();
-        if (myData.username == username.value) {
-          status = Value1;
-        }else if (myData.email == email.value) {
-          status = Value2;
-        };
+      // 1. Efficient Check: Query only for matching username
+      const userQuery = query(collection(db, "test_usercollection"), where("username", "==", username), limit(1));
+      const emailQuery = query(collection(db, "test_usercollection"), where("useremail", "==", email), limit(1));
+      
+      const [userSnap, emailSnap] = await Promise.all([getDocs(userQuery), getDocs(emailQuery)]);
+
+      if (!userSnap.empty) return message.error("ชื่อผู้ใช้ซ้ำ");
+      if (!emailSnap.empty) return message.error("อีเมลนี้ถูกใช้งานแล้ว");
+
+      // 2. Add Document
+      const docRef = await addDoc(collection(db, "test_usercollection"), {
+        username: username,
+        password: password, // Note: In a real app, never store plain-text passwords!
+        useremail: email,
+        userimg: imageBase64,
+        status: "USER",
+        timestamp: new Date()
       });
 
-      if (status == Value3) {
-
-          const docRef = await addDoc(collection(db, "test_usercollection"), {
-            username: username.value,
-            password: password.value,
-            useremail: email.value,
-            userimg: imageBase64,
-            status: "USER",
-            timestamp: new Date()
-          });
-          alert("เขียนข้อมูลสำเร็จ ID: " + docRef.id);
-          window.location.href = "/";
-      }else if (status == Value1) {
-        alert(Value1);
-      }else if (status == Value2) {
-        alert(Value2);
-      };
+      message.success("สมัครสมาชิกสำเร็จ!");
+      navigate("/");
+      
     } catch (e) {
       console.error("Error adding document: ", e);
+      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
-  };
-  const containerStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center', // เต็มความสูงจอ  // เต็มความกว้างจอ
-    backgroundColor: '#ffffff' // สีพื้นหลังอ่อนๆ
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '50px' }}>
       <h1>Register</h1>
-      <Input type="name" id="username" placeholder='ชื่อ' style={{ width: '40%'  }}/><br></br>
-      <Input type="password" id="password" placeholder='รหัส' style={{ width: '40%'  }}/><br></br>
-      <Input type="email" id="emai" placeholder='อีเมล' style={{ width: '40%'  }}/>
-      <p>ใส่รูปโปรไฟล์(ห้ามเกิน 500kbW):<Input type="file" ref={postImgRef} accept="image/*"  /></p><br></br>
-      <button onClick={addData}>ลงชื่อเข้าใช้</button>
+      <Input 
+        name="username"
+        placeholder='ชื่อผู้ใช้' 
+        style={{ width: '40%', marginBottom: '10px' }} 
+        onChange={handleInputChange} 
+      />
+      <Input.Password 
+        name="password"
+        placeholder='รหัสผ่าน' 
+        style={{ width: '40%', marginBottom: '10px' }} 
+        onChange={handleInputChange} 
+      />
+      <Input 
+        name="email"
+        type="email" 
+        placeholder='อีเมล' 
+        style={{ width: '40%', marginBottom: '10px' }} 
+        onChange={handleInputChange} 
+      />
+      
+      <div style={{ width: '40%', margin: '10px 0' }}>
+        <p>รูปโปรไฟล์ (ไม่เกิน 500KB):</p>
+        <Input type="file" ref={postImgRef} accept="image/*" />
+      </div>
+
+      <Button type="primary" onClick={addData} size="large">
+        ลงชื่อเข้าใช้
+      </Button>
     </div>
   );
 }
