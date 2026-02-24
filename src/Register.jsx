@@ -12,7 +12,7 @@ function Register() {
   if (token) {
     window.location.href = "/home";
   }      
-  const postImgRef = useRef();
+  const profileImgRef = useRef();
   const convertToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const fileReader = new FileReader();
@@ -32,7 +32,7 @@ function Register() {
       const email = document.getElementById("username");
       let status = Value3;
 
-      const file = postImgRef.current.files[0];
+      const file = profileImgRef.current?.files?.[0];
         if (file) {
             if (file.size > 500000) { 
                 alert("ไฟล์รูปใหญ่เกินไป! กรุณาใช้รูปขนาดเล็กกว่า 500KB สำหรับวิธีนี้");
@@ -87,7 +87,7 @@ function Register() {
       <Input type="name" id="username" placeholder='ชื่อ' style={{ width: '40%'  }}/><br></br>
       <Input type="password" id="password" placeholder='รหัส' style={{ width: '40%'  }}/><br></br>
       <Input type="email" id="emai" placeholder='อีเมล' style={{ width: '40%'  }}/>
-      <p>ใส่รูปโปรไฟล์(ห้ามเกิน 500kbW):<Input type="file" ref={postImgRef} accept="image/*"  /></p><br></br>
+      <p>ใส่รูปโปรไฟล์(ห้ามเกิน 500kbW):<Input type="file" ref={profileImgRef} accept="image/*"  /></p><br></br>
       <button onClick={addData}>ลงชื่อเข้าใช้</button>
     </div>
   );
