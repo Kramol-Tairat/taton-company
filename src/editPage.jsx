@@ -18,14 +18,20 @@ const editPage = () => {
   if (!receivedData) {
     return <div>ไม่พบข้อมูล (คุณอาจพิมพ์ URL เข้ามาตรงๆ)</div>;
   }
-  const handleDelete = async (id) => {
+const handleDelete = async (id) => {
     try {
       setLoading(true);
       await deleteDoc(doc(db, "post_collection", id));
+      
       message.success("ลบโพสต์สำเร็จ");
-      fetchData();
+      
+      // เปลี่ยนจากการเรียก fetchData() เป็นการสั่งถอยกลับหน้าก่อนหน้า
+      // หรือ navigate('/home'); ตามความเหมาะสมของโปรเจกต์คุณ
+      navigate(-1); 
+      
     } catch (error) {
-      message.error("ลบไม่สำเร็จ");
+      console.error("Delete Error:", error);
+      message.error("ลบไม่สำเร็จ: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -67,14 +73,14 @@ const editPage = () => {
               boxShadow: '0 2px 8px rgba(0,0,0,0.05)' // เงาบางๆ ให้ดูลอยขึ้นมา
             }}
             actions={[ // ปุ่มด้านล่าง Card
-              <Popconfirm
+              <Button
                 title="แก้ไขเสร็จสิ้น?"
-                onConfirm={() => handleSubmit(receivedData.id)}
+                onClick={() => handleSubmit(receivedData.id)}
                 okText="ใช่"
                 cancelText="ไม่"
               >
                 <CheckOutlined key="submit" style={{ color: 'green' }} />
-              </Popconfirm>,
+              </Button>,
                             <Popconfirm
                 title="ลบโพสต์นี้?"
                 onConfirm={() => handleDelete(receivedData.id)}

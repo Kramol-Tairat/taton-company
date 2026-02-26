@@ -1,146 +1,187 @@
 import { db } from './firebase';
-import { getDoc, doc , addDoc, collection, serverTimestamp} from "firebase/firestore"; 
-import { Card, Empty, Button, Avatar, Image, Typography, Space, Popconfirm, message, Input, Skeleton } from 'antd';
-import { EditOutlined, ClockCircleOutlined, CommentOutlined, HeartOutlined, HeartFilled, UserOutlined } from '@ant-design/icons';
-import { useState, useEffect, useRef } from 'react'
+import { getDoc, doc, addDoc, collection, serverTimestamp } from "firebase/firestore"; 
+import { Card, Button, Avatar, Typography, Space, message, Input, Row, Col, Divider, Image } from 'antd';
+import { UserOutlined, PictureOutlined, SendOutlined, LogoutOutlined, CloseCircleFilled } from '@ant-design/icons';
+import { useState, useEffect, useRef } from 'react';
 
 const { TextArea } = Input;
+const { Title, Text } = Typography;
 
 function Home() {
   const token = localStorage.getItem('userid');
   const [username, setUsername] = useState("กำลังโหลด...");
   const [userData, setUserData] = useState();
   const [newText, setNewText] = useState(''); 
+  const [loading, setLoading] = useState(false);
+  
+  // 1. เพิ่ม State สำหรับเก็บรูปที่จะ Preview
+  const [previewImage, setPreviewImage] = useState(null);
 
-  const postInfoRef = useRef();
   const postImgRef = useRef();
+
+  // ฟังก์ชันจัดการเมื่อเลือกไฟล์
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 500000) {
+        message.error("ไฟล์รูปใหญ่เกินไป! กรุณาใช้รูปขนาดเล็กกว่า 500KB");
+        e.target.value = null; // ล้างค่าใน input
+        return;
+      }
+      
+      // แปลงเป็น Base64 เพื่อใช้แสดง Preview และเตรียมบันทึก
+      const base64 = await convertToBase64(file);
+      setPreviewImage(base64); 
+    }
+  };
+
+  // ฟังก์ชันยกเลิกรูปที่เลือก
+  const handleRemoveImage = () => {
+    setPreviewImage(null);
+    if (postImgRef.current) postImgRef.current.value = "";
+  };
 
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const fileReader = new FileReader();
       fileReader.readAsDataURL(file);
-      fileReader.onload = () => {
-        resolve(fileReader.result);
-      };
-      fileReader.onerror = (error) => {
-        reject(error);
-      };
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.onerror = (error) => reject(error);
     });
   };
 
   const fetchData = async () => {
     if (!token) {
-      setUsername("ไม่พบข้อมูล Login");
       window.location.href = "/";
       return;
     }
-
     try {
-
-
       const docRef = doc(db, "test_usercollection", token);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setUsername(docSnap.data().username);
-        setUserData({
-          ...docSnap.data(),
-        }); // อัปเดต State เมื่อเจอข้อมูล
-      } else {
-        setUsername("ไม่พบชื่อผู้ใช้");
-        setUserData([
-
-        ]);
+        setUserData(docSnap.data());
       }
     } catch (error) {
-      console.error("Error:", error);
-      setUsername("เกิดข้อผิดพลาดในการดึงข้อมูล");
+      message.error("เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้");
     }
-   }
-   
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
-  function Logout() {
+  const Logout = () => {
     localStorage.clear();
     window.location.href = "/";
-  }
+  };
 
-    const AddPost = async (e) => {
-      e.preventDefault()
-        try {
-          const infoValue = newText;     
-          const file = postImgRef.current.files[0];
+  const AddPost = async () => {
+    if (!newText.trim() && !previewImage) return message.warning("กรุณากรอกข้อความหรือเลือกรูปภาพ");
+    
+    setLoading(true);
+    try {
+      await addDoc(collection(db, "post_collection"), {
+        postowner: token,
+        ownername: username,
+        postinfo: newText,
+        postimg: previewImage, // ใช้ค่าจาก state previewImage ได้เลย
+        likes: [],
+        timestamp: serverTimestamp(),
+      });
 
-          
-
-          let imageBase64 = null;
-
-          if (file) {
-            if (file.size > 500000) { 
-                alert("ไฟล์รูปใหญ่เกินไป! กรุณาใช้รูปขนาดเล็กกว่า 500KB สำหรับวิธีนี้");
-                return;
-            }
-            imageBase64 = await convertToBase64(file);
-          }
-
-          if (!infoValue) return alert("กรุณากรอกข้อความ");
-          await addDoc(collection(db, "post_collection"), {
-            postowner: token,
-            ownername: username,
-            postinfo: infoValue,
-            postimg: imageBase64,
-            likes: [],
-            timestamp: serverTimestamp(),
-          });
-          setNewText("");
-          alert("เพิ่มโพสต์เรียบร้อย");
-          // window.location.href = "/";
-        } catch (err) {
-          console.error("Error adding document: ", err);
-        }
-      };
-   
-
+      setNewText("");
+      setPreviewImage(null); // ล้างรูปหลังโพสต์สำเร็จ
+      if (postImgRef.current) postImgRef.current.value = "";
+      message.success("โพสต์เรียบร้อยแล้ว!");
+    } catch (err) {
+      message.error("เกิดข้อผิดพลาดในการโพสต์");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div>
-        <h1>Home</h1>
-        <Card.Meta
-              avatar={<Avatar src={userData?.userimg} // ใส่ลิงก์รูปตรงนี้
-                              icon={<UserOutlined />}      // ถ้าไม่มีรูป หรือรูปเสีย มันจะโชว์ไอคอนนี้แทน (Fallback)
-                              style={{ backgroundColor: '#fde3cf', color: '#f56a00' }} 
-                      />}
-              title={username || "ไม่ระบุชื่อ"}
-              description = {
-                <span>ผู้ใช้</span>
-              }
+      <Row justify="center">
+        {/* ทำ responsive xs คือจอเล็กที่สุด xl คือใหญ่สุด */}
+        <Col xs={24} sm={22} md={16} lg={12} xl={10}> 
+          
+          <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space size="middle">
+                <Avatar size={64} src={userData?.userimg} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+                <div>
+                  <Title level={4} style={{ margin: 0 }}>สวัสดี, {username}</Title>
+                  <Text type="secondary">ยินดีต้อนรับกลับมา</Text>
+                </div>
+              </Space>
+              <Button danger icon={<LogoutOutlined />} onClick={Logout} type="text">ออกจากระบบ</Button>
+            </div>
+          </Card>
+
+          <Card title="สร้างโพสต์ใหม่" style={{ borderRadius: 12 }}>
+            <TextArea
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              autoSize={{ minRows: 2, maxRows: 6 }}
+              placeholder="วันนี้คุณคิดอะไรอยู่..."
+              bordered={false}
+              style={{ fontSize: '16px', padding: 0, marginBottom: 12 }}
             />
-      <form onSubmit={AddPost}>
-        <p>ใส่ข้อความ:</p>
-        <div style={{ marginTop: '8px' }}>
-          <TextArea
-            value={newText}
-            onChange={(e) => setNewText(e.target.value)}
-            autoSize={{ minRows: 3, maxRows: 10 }}
-            placeholder="โพสต์ข้อความของคุณ..."
-            style={{ fontSize: '16px', borderRadius: '8px' }}
-          />
-        </div>
-        <br />
-        
-        <p>ใส่รูป (ห้ามเกิน 500kb): 
-          <input type="file" ref={postImgRef} accept="image/*" style={{ marginLeft: 10 }}/>
-        </p>
-        <br />
 
-        <Button type="primary" htmlType="submit">Add post</Button>
-        <Button danger htmlType="reset">ล้าง</Button><br></br><br></br>
-        <br /><br />
-      </form>
+            {/* --- ส่วนแสดงรูป Preview --- */}
+            {previewImage && (
+              <div style={{ position: 'relative', marginBottom: 15, textAlign: 'center' }}>
+                <Image
+                  src={previewImage}
+                  alt="Preview"
+                  style={{ borderRadius: 8, maxHeight: 300, objectFit: 'cover' }}
+                />
+                <Button 
+                  type="primary"
+                  danger
+                  shape="circle"
+                  icon={<CloseCircleFilled />}
+                  size="small"
+                  onClick={handleRemoveImage}
+                  style={{ position: 'absolute', top: 5, right: 5 }}
+                />
+              </div>
+            )}
+            
+            <Divider style={{ margin: '12px 0' }} />
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space>
+                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: '#595959' }}>
+                  <PictureOutlined style={{ fontSize: '20px', color: '#52c41a' }} />
+                  <span>รูปภาพ</span>
+                  <input 
+                    type="file" 
+                    ref={postImgRef} 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={handleFileChange} // เปลี่ยนมาใช้ฟังก์ชัน handleFileChange
+                  />
+                </label>
+              </Space>
+              
+              <Button 
+                type="primary" 
+                shape="round" 
+                icon={<SendOutlined />} 
+                onClick={AddPost}
+                loading={loading}
+              >
+                โพสต์
+              </Button>
+            </div>
+          </Card>
 
-          <Button danger onClick={Logout}>Logout</Button>
-    </div>
+          <Divider>ฟีดข่าวของคุณ</Divider>
+        </Col>
+      </Row>
+  
   );
 }
 
