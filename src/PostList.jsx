@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Popconfirm, message, Card, Typography, Image } from 'antd';
+import { Table, Button, Space, Tag, Popconfirm, message, Card, Typography, Image, Input } from 'antd';
 import { DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
 import { db } from './firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
+const { Search } = Input;
 const { Title } = Typography;
 
 const PostList = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
 
   // ฟังก์ชันดึงข้อมูลจาก Firebase
   const fetchData = async () => {
@@ -96,9 +98,6 @@ const PostList = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="primary" ghost icon={<EditOutlined />} onClick={() => message.info('กดแก้ไข ID: ' + record.id)}>
-            Edit
-          </Button>
           
           <Popconfirm
             title="ยืนยันการลบ"
@@ -113,21 +112,33 @@ const PostList = () => {
       ),
     },
   ];
+  const filteredData = data.filter(item => 
+    item.ownername?.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <Card>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={3} style={{ margin: 0 }}>รายชื่อผู้ใช้งาน</Title>
-        <Button icon={<ReloadOutlined />} onClick={fetchData}>รีเฟรชข้อมูล</Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 10 }}>
+        <Title level={3} style={{ margin: 0, flexShrink: 0 }}>รายชื่อผู้ใช้งาน</Title>
+        
+        <div style={{ display: 'flex', gap: 10, flex: 1, justifyContent: 'flex-end' }}>
+          <Search 
+            placeholder="ค้นหาชื่อผู้ใช้หรืออีเมล..." 
+            allowClear
+            onChange={e => setSearchText(e.target.value)}
+            style={{ maxWidth: 300 }} 
+          />
+          <Button icon={<ReloadOutlined />} onClick={fetchData}>รีเฟรชข้อมูล</Button>
+        </div>
       </div>
 
       <Table 
         columns={columns} 
-        dataSource={data} 
+        dataSource={filteredData} // 3. ส่งข้อมูลที่กรองแล้วเข้า Table
         loading={loading}
-        pagination={{ pageSize: 5 }} // แสดงหน้าละ 5 แถว
+        pagination={{ pageSize: 5 }}
         bordered
-        scroll={{ x: 'max-content' }} // เลื่อนแนวนอนได้ถ้าจอกว้างไม่พอ
+        scroll={{ x: 'max-content' }}
       />
     </Card>
   );

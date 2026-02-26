@@ -11,6 +11,8 @@ import PostList from './PostList.jsx'
 import MainPage from './MainPage.jsx'
 import EditPage from './editPage.jsx'
 import CommentPage from './commentPage.jsx'
+import UserList from './UserList.jsx'
+import SubLayout from './SubLayout.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -23,9 +25,14 @@ createRoot(document.getElementById('root')).render(
           <Route path="/home" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/MainPage" element={<MainPage />} />
-          <Route path="/PostList" element={<PostList />} />
+          
           <Route path="/EditPage" element={<EditPage />} />
           <Route path="/CommentPage" element={<CommentPage />} />
+          
+          <Route path="/Admin" element={<SubLayout />}> 
+            <Route path="/Admin/" element={<UserList />} />
+            <Route path="/Admin/PostList" element={<PostList />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
